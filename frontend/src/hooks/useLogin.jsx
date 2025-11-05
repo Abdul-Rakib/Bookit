@@ -35,7 +35,7 @@ export const useLogin = () => {
         }
 
         setIsLoggedIn(true);
-        window.location = "/dashboard";
+        window.location = "/";
       }
 
     }

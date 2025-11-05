@@ -45,7 +45,7 @@ export const useAuth = () => {
                 }
 
                 setIsLoggedIn(true);
-                navigate('/dashboard')
+                navigate('/')
                 return true
             } else if (data.success === false && data.msg === "New user detected.") {
                 // This is a new user case
