@@ -3,6 +3,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { createBooking, validatePromoCode } from '../../services/api';
 import { FiArrowLeft, FiLoader } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import NavBar from '../../components/navbar/NavBar';
 
 export default function Checkout() {
     const location = useLocation();
@@ -128,6 +129,7 @@ export default function Checkout() {
 
     return (
         <div className="min-h-screen bg-gray-50">
+            <NavBar />
             <div className="max-w-7xl mx-auto px-4 py-4">
                 <div className="grid lg:grid-cols-3 gap-8">
                     {/* Left Column - Form */}

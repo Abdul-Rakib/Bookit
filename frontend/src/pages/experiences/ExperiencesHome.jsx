@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchExperiences } from '../../services/api';
-import { FiSearch, FiMapPin, FiLoader } from 'react-icons/fi';
+import { FiMapPin, FiLoader } from 'react-icons/fi';
 import Footer from '../footer/footer';
-import Sidebar from '../../components/navbar/sideBar';
+import NavBar from '../../components/navbar/NavBar';
 
 export default function ExperiencesHome() {
     const [experiences, setExperiences] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
+    const [imageLoadStates, setImageLoadStates] = useState({});
     const navigate = useNavigate();
-
-    const [isSidebarOpen, setSidebarOpen] = useState(false);
 
     useEffect(() => {
         loadExperiences();
@@ -22,6 +20,12 @@ export default function ExperiencesHome() {
             setLoading(true);
             const response = await fetchExperiences(filters);
             setExperiences(response.data || []);
+            // Initialize image load states
+            const loadStates = {};
+            response.data?.forEach(exp => {
+                loadStates[exp._id] = false;
+            });
+            setImageLoadStates(loadStates);
         } catch (error) {
             console.error('Failed to load experiences:', error);
         } finally {
@@ -29,65 +33,32 @@ export default function ExperiencesHome() {
         }
     };
 
-    const handleSearch = (e) => {
-        e.preventDefault();
+    const handleSearch = (searchQuery) => {
         loadExperiences({ search: searchQuery });
     };
 
-    const toggleSidebar = () => {
-        setSidebarOpen(!isSidebarOpen);
+    const handleImageLoad = (expId) => {
+        setImageLoadStates(prev => ({
+            ...prev,
+            [expId]: true
+        }));
     };
-
 
     return (
         <div className="min-h-screen bg-gray-50">
-
-
-            <header className="sticky top-0 z-10 w-full bg-white shadow-sm">
-                <div className="flex items-center justify-between p-3 px-6">
-                    {/* Left Side: Hamburger Menu & Logo */}
-                    <div className="flex items-center gap-5">
-                        <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-
-                        {/* Logo: This is a recreation of the logo from your image. */}
-                        <div className="flex cursor-pointer items-center gap-2">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-black">
-                                <span className="text-sm font-bold leading-none text-yellow-400">hd</span>
-                            </div>
-                            <span className="text-lg font-semibold text-gray-800">highway delite</span>
-                        </div>
-                    </div>
-
-                    {/* Right Side: Search Form */}
-                    <form onSubmit={handleSearch} className="flex items-center gap-3">
-                        <input
-                            type="text"
-                            placeholder="search"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-80 rounded-md border-0 bg-gray-100 text-black px-4 py-2 text-sm focus:outline-none focus:ring-0"
-                        />
-                        <button
-                            type="submit"
-                            className="rounded-md bg-yellow-400 px-6 py-2 text-black transition-colors hover:bg-yellow-500"
-                        >
-                            Search
-                        </button>
-                    </form>
-                </div>
-            </header>
+            <NavBar onSearch={handleSearch} showSearch={true} />
             {/* Experiences Grid */}
-            <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {loading ? (
                     <div className="flex justify-center items-center h-64">
                         <FiLoader className="animate-spin text-yellow-400" size={48} />
                     </div>
                 ) : experiences.length === 0 ? (
                     <div className="text-center py-20">
-                        <p className="text-gray-500 text-lg">No experiences found</p>
+                        <p className="text-gray-500 text-base sm:text-lg">No experiences found</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                         {experiences.map((experience) => (
                             <Link
                                 key={experience._id}
@@ -95,35 +66,49 @@ export default function ExperiencesHome() {
                                 className="bg-gray-100 rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden group"
                             >
                                 {/* Image */}
-                                <div className="relative h-48 overflow-hidden">
+                                <div className="relative h-40 sm:h-48 overflow-hidden bg-gray-200">
+                                    {/* Loading skeleton */}
+                                    {!imageLoadStates[experience._id] && (
+                                        <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse" />
+                                    )}
                                     <img
                                         src={experience.images[0]?.url || 'https://via.placeholder.com/400x300'}
                                         alt={experience.title}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                        loading="lazy"
+                                        decoding="async"
+                                        onLoad={() => handleImageLoad(experience._id)}
+                                        className={`w-full h-full object-cover group-hover:scale-110 transition-all duration-300 ${
+                                            imageLoadStates[experience._id] ? 'opacity-100' : 'opacity-0'
+                                        }`}
+                                        style={{ 
+                                            willChange: 'transform',
+                                            backfaceVisibility: 'hidden',
+                                            transform: 'translateZ(0)'
+                                        }}
                                     />
                                 </div>
 
                                 {/* Content */}
-                                <div className="p-4">
+                                <div className="p-3 sm:p-4">
 
-                                    <div className="flex items-center text-gray-600 text-sm mb-3">
-                                        <FiMapPin className="mr-1" size={14} />
+                                    <div className="flex items-center text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3">
+                                        <FiMapPin className="mr-1 flex-shrink-0" size={14} />
                                         <span className="line-clamp-1">{experience.location.city}</span>
-                                        <span className="line-clamp-1 bg-gray-200 p-1 rounded">{experience.location.city}</span>
+                                        <span className="line-clamp-1 bg-gray-200 p-1 rounded ml-2">{experience.location.city}</span>
                                     </div>
 
-                                    <p className="text-gray-600 text-xs mb-4 line-clamp-2">
+                                    <p className="text-gray-600 text-xs mb-3 sm:mb-4 line-clamp-2">
                                         {experience.shortDescription}
                                     </p>
 
-                                    <div className="flex items-center justify-between">
-                                        <div className='flex items-center gap-2'>
-                                            <span className="text-sm text-gray-500">From</span>
-                                            <div className="text-lg font-semi-bold text-gray-900">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className='flex items-center gap-1 sm:gap-2'>
+                                            <span className="text-xs sm:text-sm text-gray-500">From</span>
+                                            <div className="text-base sm:text-lg font-semi-bold text-gray-900">
                                                 ₹{experience.price}
                                             </div>
                                         </div>
-                                        <button className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded text-sm transition-colors">
+                                        <button className="px-3 sm:px-4 py-1.5 sm:py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded text-xs sm:text-sm transition-colors whitespace-nowrap">
                                             View Details
                                         </button>
                                     </div>
